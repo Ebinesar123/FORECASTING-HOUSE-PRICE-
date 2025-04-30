@@ -1,120 +1,109 @@
- import pandas as pd
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
-# ================================
+# ================================================
 # 1. Data Collection
-# ================================
-# Load dataset (make sure the file path is correct)
+# ================================================
 df = pd.read_excel("dataset.xlsx")
 
-# Quick preview of data
 print("\n--- Data Sample ---")
 print(df.head())
 
-# Check columns available
 print("\nColumns available:", df.columns.tolist())
 
-# ================================
+# ================================================
 # 2. Data Cleaning
-# ================================
-# Check for missing values
+# ================================================
 print("\n--- Missing Values ---")
 print(df.isnull().sum())
 
-# Remove duplicates
 df.drop_duplicates(inplace=True)
-
-# Remove rows with missing values in important columns
-df.dropna(subset=["Bedrooms", "Bathrooms", "Floors", "Price"], inplace=True)
-
-# Clean column names (standardize)
 df.columns = df.columns.str.strip().str.title()
-
-# Reset index after cleaning
+df.dropna(subset=["Bedrooms", "Bathrooms", "Floors", "Garage", "Condition", "Price"], inplace=True)
 df.reset_index(drop=True, inplace=True)
 
-# ================================
+# ================================================
 # 3. Exploratory Data Analysis (EDA)
-# ================================
-# Summary statistics for important columns
+# ================================================
 print("\n--- Summary Statistics ---")
-print(df[["Bedrooms", "Bathrooms", "Floors", "Price"]].describe())
+print(df[["Bedrooms", "Bathrooms", "Floors"]].describe())
 
-# Visualize distribution of house prices
-import matplotlib.pyplot as plt
-plt.hist(df['Price'], bins=30, color='skyblue')
-plt.title('Distribution of House Prices')
-plt.xlabel('Price')
+# Plotting histograms and correlation
+plt.hist(df['Bedrooms'], bins=10, color='lightgreen')
+plt.title('Distribution of Bedrooms')
+plt.xlabel('Bedrooms')
 plt.ylabel('Frequency')
 plt.show()
 
-# Visualize correlation between features
-import seaborn as sns
-sns.heatmap(df.corr(), annot=True, cmap='coolwarm')
+sns.heatmap(df.select_dtypes(include='number').corr(), annot=True, cmap='coolwarm')
 plt.title('Feature Correlation')
 plt.show()
 
-# ================================
+# ================================================
 # 4. Feature Engineering
-# ================================
-# Create a new feature: TotalRooms = Bedrooms + Bathrooms
+# ================================================
 df["TotalRooms"] = df["Bedrooms"] + df["Bathrooms"]
-
-# Check the first few rows to verify new feature
 print("\n--- New Feature (TotalRooms) ---")
-print(df[['Bedrooms', 'Bathrooms', 'TotalRooms']].head())
+print(df[["Bedrooms", "Bathrooms", "TotalRooms"]].head())
 
-# ================================
-# 5. Model Building
-# ================================
-# Features and target variable
-X = df[["Bedrooms", "Bathrooms", "Floors", "TotalRooms"]]
+# ================================================
+# 5. Model Building (Linear Regression)
+# ================================================
+# Define features and target variable
+features = ["Bedrooms", "Bathrooms", "Floors", "Garage", "Condition", "TotalRooms"]
+X = pd.get_dummies(df[features], drop_first=True)  # One-hot encoding for categorical variables
 y = df["Price"]
 
-# Split the dataset into training and testing sets
+# Split data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train the model
+# Initialize and train the model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# ================================
+# ================================================
 # 6. Model Evaluation
-# ================================
-# Make predictions and evaluate the model
+# ================================================
 y_pred = model.predict(X_test)
+
+# Evaluate the model
 mse = mean_squared_error(y_test, y_pred)
-print(f"\n--- Model Evaluation ---\nMean Squared Error: {mse:.2f}")
+r2 = r2_score(y_test, y_pred)
 
-# Additional evaluation metrics can be added here if necessary
+print("\n--- Model Evaluation ---")
+print(f"Mean Squared Error (MSE): {mse}")
+print(f"R-squared: {r2}")
 
-# ================================
-# 7. User Input and Prediction
-# ================================
+# ================================================
+# 7. User Input and Price Prediction
+# ================================================
 try:
-    # Get user input for house features
     bedrooms = int(input("Enter number of bedrooms: "))
     bathrooms = int(input("Enter number of bathrooms: "))
     floors = int(input("Enter number of floors: "))
-    total_rooms = bedrooms + bathrooms  # Calculate TotalRooms
+    garage = int(input("Enter number of garages: "))
+    condition = input("Enter house condition (e.g., Excellent, Good, Fair): ").strip().title()
 
-    # Prepare input data for prediction
-    input_data = pd.DataFrame([[bedrooms, bathrooms, floors, total_rooms]],
-                              columns=["Bedrooms", "Bathrooms", "Floors", "TotalRooms"])
+    input_data = pd.DataFrame({
+        "Bedrooms": [bedrooms],
+        "Bathrooms": [bathrooms],
+        "Floors": [floors],
+        "Garage": [garage],
+        "Condition": [condition],
+        "TotalRooms": [bedrooms + bathrooms]
+    })
 
-    # Make the prediction
-    predicted_price = model.predict(input_data)[0]
-    print(f"\n💰 Predicted House Price: ₹{predicted_price:,.2f}")
+    # Preprocessing input data
+    input_data = pd.get_dummies(input_data, drop_first=True)
+    # Align input data columns with model training data
+    input_data = input_data.reindex(columns=X.columns, fill_value=0)
+
+    predicted_price = model.predict(input_data)
+    print(f"Predicted House Price: ${predicted_price[0]:,.2f}")
 
 except ValueError:
-    print("⚠️ Please enter valid numbers.")
-
-# ================================
-# 8. Deployment (optional)
-# ================================
-# Optionally deploy this as a Streamlit app:
-# 1. Install Streamlit with: pip install streamlit
-# 2. Use: st.number_input, st.write, etc., to create interactive inputs
-# 3. Run with: streamlit run your_script.py
+    print("⚠️ Please enter valid numeric values.")
