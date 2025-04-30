@@ -1,0 +1,46 @@
+--- Data Sample ---
+   Bedrooms  Bathrooms  Floors  Garage Condition   Price
+0         3        2.0       1       1   Good     250000
+1         4        3.0       2       2   Excellent 375000
+2         2        1.0       1       1   Fair     180000
+3         3        2.0       1       1   Good     260000
+4         5        4.0       2       2   Excellent 490000
+
+Columns available: ['Bedrooms', 'Bathrooms', 'Floors', 'Garage', 'Condition', 'Price']
+
+--- Missing Values ---
+Bedrooms     0
+Bathrooms    0
+Floors       0
+Garage       0
+Condition    0
+Price        0
+dtype: int64
+
+--- Summary Statistics ---
+        Bedrooms  Bathrooms     Floors
+count  100.00000  100.00000  100.00000
+mean     3.24000    2.15000    1.35000
+std      1.10000    0.75000    0.48000
+min      1.00000    1.00000    1.00000
+max      6.00000    4.00000    3.00000
+
+--- New Feature (TotalRooms) ---
+   Bedrooms  Bathrooms  TotalRooms
+0         3        2.0         5.0
+1         4        3.0         7.0
+2         2        1.0         3.0
+3         3        2.0         5.0
+4         5        4.0         9.0
+
+--- Model Evaluation ---
+Mean Squared Error (MSE): 2100000000.00
+R-squared: 0.81
+
+Enter number of bedrooms: 3  
+Enter number of bathrooms: 2  
+Enter number of floors: 1  
+Enter number of garages: 1  
+Enter house condition (e.g., Excellent, Good, Fair): Good
+
+Predicted House Price: $265,400.75
